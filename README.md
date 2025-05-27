@@ -78,7 +78,7 @@ kubectl delete pod cyclegan-data-pod
 
 ### Training Execution
 
-**Interactive Development:**
+**Interactive Development (Pod):**
 ```bash
 kubectl apply -f train_pod.yml
 watch kubectl get pods
@@ -93,8 +93,9 @@ kubectl exec -it cyclegan-train-pod -- bash
 kubectl delete pod cyclegan-train-pod
 ```
 
-**Automated Training:**
+**Automated Training (Job):**
 ```bash
+# train_job.yml is very simmilar to train_pod.yml, but with some syntactic differences, higher resource requests, and self-termination
 kubectl apply -f train_job.yml
 kubectl logs -f jobs/cyclegan-train-job
 kubectl exec -it jobs/cyclegan-train-job -- nvidia-smi
