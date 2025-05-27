@@ -25,7 +25,6 @@ Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/r
 - `data_pod.yml` - Download & preprocess data
 - `train_pod.yml` - Training with 'sleep infinity' at end for debugging, max 2 non-A100 GPUs and 6hr runtime
 - `train_job.yml` - Self-terminating training
-- `aliases.md` - Helpful kubectl shortcuts
 
 ## Getting Started
 
