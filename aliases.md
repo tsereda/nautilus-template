@@ -4,6 +4,10 @@ Speed up your Nautilus workflow with these helpful kubectl aliases.
 
 ## Linux/macOS Setup
 
+```bash
+echo $SHELL
+```
+
 **For Bash** (add to `~/.bashrc`):
 ```bash
 # K8s Aliases & Bash Completion
