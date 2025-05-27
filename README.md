@@ -126,6 +126,7 @@ kubectl delete job cyclegan-train-job
 - **A100 GPUs**: Require special queue access and approval
 
 **Recommended Workflow:** Validate functionality using `train_pod.yml`, deploy production runs with `train_job.yml`, and request A100 access only after the job runs correctly.
+**Request Namespace A100 GPU Access:** https://nrp.ai/documentation/userdocs/running/gpu-pods/#requesting-special-gpus
 
 ## Troubleshooting
 
