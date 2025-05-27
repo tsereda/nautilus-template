@@ -89,7 +89,7 @@ kubectl exec -it cyclegan-data-pod -- bash
 # Clean up when done
 kubectl delete pod cyclegan-data-pod
 
-#With Aliases
+# OR With Aliases
 ka data_pod.yml
 wkgp
 kl cyclegan-data-pod 

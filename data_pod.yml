@@ -17,20 +17,26 @@ spec:
         - "-c"
       args:
         - |
-          pip install requests tqdm gdown 
-          
-          # Download horse2zebra dataset to pvc (our pvc is mounted to /data/ below)
-          wget -N http://efrosgans.eecs.berkeley.edu/cyclegan/datasets/horse2zebra.zip -O /data/horse2zebra.zip
-          
-          # If your data requires preprocessing: uncompress it, clone and run your preprocessing code, then compress and copy to pvc
-          # Example:
+          pip install requests tqdm gdown
+
+          # Download horse2zebra dataset
+          sudo wget -N http://efrosgans.eecs.berkeley.edu/cyclegan/datasets/horse2zebra.zip -O /tmp/horse2zebra.zip
+
+          # Note: This dataset does not require preprocessing, so we could just download directly to the pvc. Below the data is unzipped an immedietly recompressed for domonstration purposes
+
+          # Extract (and run preprocessing script if you have one)
+          sudo unzip /tmp/horse2zebra.zip -d processed_data/
+
           # Download compression tools
-          # apt-get update && sudo apt-get install -y p7zip-full pigz pv
-          # Compress processed data and save to PVC with timestamp
-          # sudo tar -cf - -C processed_data . | pv | sudo pigz -p $(nproc) | sudo tee /data/processed_data_$(date +%m%d_%H%M).tar.gz > /dev/null
-          
+          sudo apt-get update && sudo apt-get install -y p7zip-full pigz pv
+
+          # Compress processed data with multithreading and 'kubectl logs'-visible output and save to PVC with timestamp
+          sudo tar -cf - -C processed_data . | pv | sudo pigz -p $(nproc) | sudo tee /data/processed_data_$(date +%m%d_%H%M).tar.gz > /dev/null
+
+          echo "Download, extraction, and recompression complete! PVC content:"
           ls -lh /data/
-          
+          echo "You are ready to delete this pod and run training!"
+
           sleep infinity
       volumeMounts:
         - name: git-repo
