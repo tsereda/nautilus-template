@@ -1,0 +1,108 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cyclegan-train-job
+spec:
+  template:
+    spec:
+      nodeSelector:
+        topology.kubernetes.io/zone: sdsu-rci
+        topology.kubernetes.io/region: us-west
+      containers:
+        - name: cyclegan-trainer
+          image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
+          env:
+            - name: REPO_PATH
+              value: /app/pytorch-CycleGAN-and-pix2pix
+            - name: DATASET_NAME
+              value: "horse2zebra"  # Change this for different datasets
+            - name: MODEL_NAME
+              value: "horse2zebra_production"
+
+          command:
+            - "bash"
+            - "-c"
+          args:
+            - |
+              set -e  # Exit on any error
+              
+              echo "=== Starting Automated CycleGAN Training Job ==="
+              echo "Dataset: ${DATASET_NAME}"
+              echo "Model Name: ${MODEL_NAME}"
+              echo "Epochs: ${EPOCHS} + ${DECAY_EPOCHS} decay"
+              
+              # Clone repository
+              echo "Cloning repository..."
+              git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
+              cd ${REPO_PATH}
+              
+              # Install requirements
+              echo "Installing requirements..."
+              pip install -r requirements.txt
+              
+              # Check for pre-downloaded data
+              if [ ! -d "/data/datasets/${DATASET_NAME}" ]; then
+                echo "Dataset not found at /data/datasets/${DATASET_NAME}"
+                echo "Please run data_pod.yml first to download datasets"
+                exit 1
+              fi
+              
+              echo "Found dataset at /data/datasets/${DATASET_NAME}"
+              
+              # Create results directory
+              mkdir -p /data/results
+              mkdir -p /data/checkpoints
+              
+              # Train the model
+              echo "Starting training..."
+              python train.py \
+                --dataroot /data/datasets/${DATASET_NAME} \
+                --name ${MODEL_NAME} \
+                --model cycle_gan \
+                --n_epochs ${EPOCHS} \
+                --n_epochs_decay ${DECAY_EPOCHS} \
+                --save_epoch_freq 10 \
+                --display_freq 400 \
+                --print_freq 100 \
+                --checkpoints_dir /data/checkpoints \
+                --gpu_ids 0
+              
+              # Test the model
+              echo "Running inference..."
+              python test.py \
+                --dataroot /data/datasets/${DATASET_NAME} \
+                --name ${MODEL_NAME} \
+                --model cycle_gan \
+                --checkpoints_dir /data/checkpoints \
+                --results_dir /data/results
+              
+              exit 0
+          volumeMounts:
+            - name: git-repo
+              mountPath: /app
+            - name: data-volume
+              mountPath: /data
+            - name: dshm
+              mountPath: /dev/shm
+          resources:
+            # GPU resources for training
+            limits:
+              memory: 24Gi
+              cpu: "12"
+              nvidia.com/gpu: "1"
+            requests:
+              memory: 20Gi
+              cpu: "10"
+              nvidia.com/gpu: "1"
+      volumes:
+        - name: git-repo
+          emptyDir: {}
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: cyclegan-data-pvc
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi
+      restartPolicy: Never
+  backoffLimit: 2  # Retry up to 2 times if job fails

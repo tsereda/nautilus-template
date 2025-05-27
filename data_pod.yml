@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cyclegan-data-pod
+spec:
+  nodeSelector:
+    topology.kubernetes.io/zone: sdsu-rci
+    topology.kubernetes.io/region: us-west
+  containers:
+    - name: data-downloader
+      image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
+      env:
+        - name: REPO_PATH
+          value: /app/pytorch-CycleGAN-and-pix2pix
+      command:
+        - "bash"
+        - "-c"
+      args:
+        - |
+          echo "=== Data Download Pod Started ==="
+          
+          # Clone repository for dataset scripts
+          git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
+          cd ${REPO_PATH}
+          
+          # Install minimal requirements for data downloading
+          pip install requests tqdm
+          
+          echo "Available datasets:"
+          echo "- horse2zebra (recommended for testing)"
+          echo "- maps, facades, cityscapes, apple2orange, summer2winter_yosemite"
+          echo ""
+          echo "To download a dataset:"
+          echo "  kubectl exec -it cyclegan-data-pod -- bash"
+          echo "  cd /app/pytorch-CycleGAN-and-pix2pix"
+          echo "  bash ./datasets/download_cyclegan_dataset.sh horse2zebra"
+          echo "  mkdir -p /data/datasets"
+          echo "  cp -r ./datasets/* /data/datasets/"
+          echo ""
+          echo "Data will be saved to /data/datasets for use by training pods"
+          echo "=== Ready for interactive data preparation ==="
+          
+          # Keep running for interactive use
+          sleep infinity
+      volumeMounts:
+        - name: git-repo
+          mountPath: /app
+        - name: data-volume
+          mountPath: /data
+      resources:
+        # No GPU needed for data downloading - saves resources!
+        limits:
+          memory: 12Gi
+          cpu: "6"
+        requests:
+          memory: 10Gi
+          cpu: "5"
+  volumes:
+    - name: git-repo
+      emptyDir: {}
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: cyclegan-data-pvc
+  restartPolicy: Never

@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cyclegan-train-pod
+spec:
+  nodeSelector:
+    topology.kubernetes.io/zone: sdsu-rci
+    topology.kubernetes.io/region: us-west
+  containers:
+    - name: cyclegan-trainer
+      image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
+      env:
+        - name: REPO_PATH
+          value: /app/pytorch-CycleGAN-and-pix2pix
+      command:
+        - "bash"
+        - "-c"
+      args:
+        - |
+          echo "=== Training Pod Started ==="
+          
+          # Clone the CycleGAN repository
+          git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
+          cd ${REPO_PATH}
+          
+          # Install full requirements for training
+          pip install -r requirements.txt
+          
+          # Check if data exists
+          if [ -d "/data/datasets" ]; then
+            echo "✅ Found datasets in /data/datasets"
+            ls -la /data/datasets/
+          else
+            echo "⚠️  No datasets found in /data/datasets"
+            echo "   First run data_pod.yml to download datasets"
+          fi
+          
+          echo ""
+          echo "=== Training Environment Ready ==="
+          echo "Repository: ${REPO_PATH}"
+          echo "Datasets: /data/datasets"
+          echo "Results: /data/results (create this directory)"
+          echo "GPU: Available for training"
+          echo ""
+          echo "Connect with: kubectl exec -it cyclegan-train-pod -- bash"
+          echo ""
+          echo "Quick start training commands:"
+          echo "  cd /app/pytorch-CycleGAN-and-pix2pix"
+          echo "  # Quick test (5 epochs)"
+          echo "  python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 2 --n_epochs_decay 3"
+          echo "  # Full training"  
+          echo "  python train.py --dataroot /data/datasets/horse2zebra --name horse2zebra_full --model cycle_gan"
+          echo ""
+          echo "=== Ready for Interactive Training ==="
+          
+          # Keep container running for interactive use
+          sleep infinity
+      volumeMounts:
+        - name: git-repo
+          mountPath: /app
+        - name: data-volume
+          mountPath: /data
+        - name: dshm
+          mountPath: /dev/shm
+      resources:
+        # GPU resources for training
+        limits:
+          memory: 24Gi
+          cpu: "12"
+          nvidia.com/gpu: "1"
+        requests:
+          memory: 20Gi
+          cpu: "10"
+          nvidia.com/gpu: "1"
+  volumes:
+    - name: git-repo
+      emptyDir: {}
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: cyclegan-data-pvc
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 8Gi
+  restartPolicy: Never
