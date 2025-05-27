@@ -2,6 +2,12 @@
 
 A template repository for running machine learning projects on the Nautilus cluster using Kubernetes. This example uses [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) but can be adapted for any ML project.
 
+## About Nautilus & Kubernetes
+
+**Nautilus** is part of the National Research Platform (NRP), a national resource sharing program that provides researchers access to distributed computing infrastructure across multiple universities. It uses **Kubernetes**, an orchestration system that manages containerized applications across clusters of machines, allowing you to run your ML jobs on shared GPU resources.
+
+
+
 ## Important: Read First
 
 **Nautilus is a shared environment with strict rules and bannable offenses.**
@@ -15,10 +21,10 @@ Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/r
 
 ## Template Files
 
-- `pvc.yml` - Persistent storage for your datasets
-- `data_pod.yml` - Download & preprocess datasets (no GPU needed)
-- `train_pod.yml` - Interactive training environment (GPU access)
-- `train_job.yml` - Automated production training (GPU access)
+- `pvc.yml` - Persistent storage for your data
+- `data_pod.yml` - Download & preprocess data
+- `train_pod.yml` - Training with 'sleep infinity' at end for debugging, max 2 non-A100 GPUs and 6hr runtime
+- `train_job.yml` - Self-terminating training
 - `aliases.md` - Helpful kubectl shortcuts
 
 ## Getting Started
@@ -68,14 +74,12 @@ kubectl apply -f pvc.yml
 ### Step 2: Download Data (No GPU Needed)
 ```bash
 kubectl apply -f data_pod.yml
+# Data pod automatically downloads horse2zebra dataset
+kubectl logs -f cyclegan-data-pod  # Monitor download progress
+
+# For manual downloads or other data:
 kubectl exec -it cyclegan-data-pod -- bash
-
-# Inside the data pod
-cd /app/pytorch-CycleGAN-and-pix2pix
-bash ./datasets/download_cyclegan_dataset.sh horse2zebra
-mkdir -p /data/datasets
-cp -r ./datasets/* /data/datasets/
-
+# Inside the pod, use gdown, wget, curl, or other download utility
 # Clean up when done
 kubectl delete pod cyclegan-data-pod
 ```
@@ -183,11 +187,6 @@ kubectl get events
 **Authentication issues:**
 - Redownload config from https://portal.nrp-nautilus.io/
 - Replace `~/.kube/config`
-
-**Out of resources:**
-- Check `kubectl describe nodes`
-- Reduce resource requests
-- Try different node zones
 
 ## Additional Resources
 
