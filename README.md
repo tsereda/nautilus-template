@@ -4,166 +4,135 @@ A template repository for running machine learning projects on the Nautilus clus
 
 ## About Nautilus & Kubernetes
 
-**Nautilus** is part of the National Research Platform (NRP), a national resource sharing program that provides researchers access to distributed computing infrastructure across multiple universities. It uses **Kubernetes**, an orchestration system that manages containerized applications across clusters of machines, allowing you to run your ML jobs on shared GPU resources.
+**Nautilus** is part of the National Research Platform (NRP), a national resource sharing program that provides researchers access to distributed computing infrastructure across multiple universities. It uses **Kubernetes**, an orchestration system that manages containerized applications across clusters of machines, allowing you to run ML jobs on shared GPU resources.
 
+## Prerequisites and Important Notes
 
+**Nautilus is a shared environment with strict resource policies.**
 
-## Important: Read First
+- Request only the resources required for your workload
+- Release unused resources promptly
+- Ensure all jobs terminate automatically upon completion
+- **Delete unused pods immediately** to prevent namespace suspension
 
-**Nautilus is a shared environment with strict rules and bannable offenses.**
+Review the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/) before beginning.
 
-- Only request the resources you need
-- Free up resources you don't use  
-- Jobs must always self-terminate
-- **DELETE UNUSED PODS** (wasting resources can get the namespace banned!)
+## Template Components
 
-Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/) before use.
+- `pvc.yml` - Persistent storage configuration for datasets and results
+- `data_pod.yml` - Data acquisition and preprocessing pipeline
+- `train_pod.yml` - Interactive development environment with GPU access (max 2 non-A100 GPUs, 6-hour runtime)
+- `train_job.yml` - Automated training job with self-termination
 
-## Template Files
+## Setup Instructions
 
-- `pvc.yml` - Persistent storage for your data
-- `data_pod.yml` - Download & preprocess data
-- `train_pod.yml` - Training with 'sleep infinity' at end for debugging, max 2 non-A100 GPUs and 6hr runtime
-- `train_job.yml` - Self-terminating training
+### 1. Nautilus Account Access
 
-## Getting Started
-
-### 1. Access Nautilus
-
-1. **Login** to https://portal.nrp-nautilus.io/
-   - Use your `@coyotes.usd.edu` email
+1. **User Registration**: Navigate to https://portal.nrp-nautilus.io/
+   - Use your `@coyotes.usd.edu` email address
    - Select "CILogon" → "University of South Dakota"
 
-2. **Have your PI create an account** (same process)
+2. **PI Account Creation**: Principal Investigator follows the same registration process
 
-3. **Request namespace** at https://element.nrp-nautilus.io/#/room/#general:matrix.nrp-nautilus.io
-   - PI should message: *"Hello, I am a professor at the University of South Dakota, may I please be made a namespace admin?"*
+3. **Namespace Request**: PI contacts support at https://element.nrp-nautilus.io/#/room/#general:matrix.nrp-nautilus.io
+   - Message: *"Hello, I am a professor at the University of South Dakota requesting namespace administrator privileges."*
 
-4. **PI creates namespace** at https://portal.nrp-nautilus.io/ → 'Namespace Manager'
-   - Name must start with "gp-engine" for grant tracking
-   - PI adds you as a user
+4. **Namespace Configuration**: PI creates namespace via Portal → 'Namespace Manager'
+   - Namespace must be prefixed with "gp-engine" for grant tracking compliance
+   - PI adds users to the namespace
 
-5. **Verify access**: Portal → "Namespace Manager" → check namespace field
+5. **Access Verification**: Confirm access via Portal → "Namespace Manager"
 
-### 2. Set Up Kubernetes
+### 2. Kubernetes Configuration
 
-1. **Install kubectl**: https://kubernetes.io/releases/download/
-
-2. **Download config**: https://portal.nrp-nautilus.io/ → 'Get Config'
-
-3. **Place config** in `~/.kube/config` 
-   - Create the directory if it doesn't exist
-   - `~` means your home directory
-
-4. **Verify access**: 
+1. **Install kubectl**: Follow instructions at https://kubernetes.io/releases/download/
+2. **Download Configuration**: Portal → 'Get Config'
+3. **Install Configuration**: Place downloaded file at `~/.kube/config`
+4. **Verify Installation**: 
    ```bash
    kubectl config get-contexts
-   # You should see your namespace
    ```
 
-## Usage Workflow
+## Workflow
 
-### Step 1: Create Storage
+### Storage Provisioning
 ```bash
 kubectl apply -f pvc.yml
-kubectl get pvc #Verify the status of your pvc is 'Bound'
-
+kubectl get pvc  # Verify status shows 'Bound'
 ```
 
-### Step 2: Download Data
+### Data Preparation
 ```bash
 kubectl apply -f data_pod.yml
-# Data pod automatically downloads horse2zebra dataset
-watch kubectl get pods # Wait for pod status 'Running' (Ctrl+C to cancel)
-kubectl logs -f cyclegan-data-pod  # Monitor download progress
+kubectl get pods -w  # Monitor until status shows 'Running'
+kubectl logs -f cyclegan-data-pod  # Track download progress
 
-# For manual downloads or other data:
+# For custom data operations:
 kubectl exec -it cyclegan-data-pod -- bash
 
-# Clean up when done
+# Cleanup:
 kubectl delete pod cyclegan-data-pod
 ```
 
-### Step 3a: Interactive Training
+### Training Execution
+
+**Interactive Development:**
 ```bash
 kubectl apply -f train_pod.yml
-watch kubectl get pods
-kubectl logs -f cyclegan-data-pod
+kubectl get pods -w
+kubectl exec -it cyclegan-train-pod -- nvidia-smi  # Verify GPU allocation
 
-# Check that the GPU is being used
-kubectl exec -it cyclegan-train-pod -- nvidia-smi
-
-# If debugging needed
+# For debugging:
 kubectl exec -it cyclegan-train-pod -- bash
 
-# Clean up when done
+# Cleanup:
 kubectl delete pod cyclegan-train-pod
-
-# Once your pod runs without manual intervention using kubectl exec, it is ready to become a pod. Manually copy the "args" section of the .yml and any other changes you made or ask a language model to do it for you
 ```
 
-### Step 3b: Automated Training
+**Automated Training:**
 ```bash
 kubectl apply -f train_job.yml
-kubectl logs -f job/cyclegan-train-job  # Monitor progress
-kubectl exec -it cyclegan-train-pod -- nvidia-smi
-# Job exits automatically when complete
-kubectl delete pod cyclegan-train-pod
+kubectl logs -f job/cyclegan-train-job
+# Job terminates automatically upon completion
 ```
 
-**data_pod.yml** - Data preparation (CPU only)
-- Downloads datasets efficiently without wasting GPU resources
-- Handles preprocessing and data validation
-- Multiple people can reuse the same prepared data
+## Pod Specifications
 
-**train_pod.yml** - Interactive development (GPU access)
-- Experiment with hyperparameters
-- Debug training code
-- Quick test runs and validation
+**Data Pod (`data_pod.yml`)** - CPU-only data preparation
+- Handles data download and preprocessing
 
-**train_job.yml** - Production training (GPU access)
-- Fully automated training runs
-- No manual interaction required
-- Saves results and exits cleanly (Nautilus compliant)
+**Training Pod (`train_pod.yml`)** - Interactive GPU-enabled development
+- Persistent session for debugging
 
-## Customizing This Template
+**Training Job (`train_job.yml`)** - Automated GPU-enabled production
+- Fully autonomous training execution with automatic termination
 
-1. **Fork this repository**
+## Customization Guidelines
 
-2. **Edit `pvc.yml`:**
-   - Change storage name and size
+1. **Repository Adaptation**: Fork this repository for your project or copy .ymls to your repository
+2. **Storage Configuration**: Modify `pvc.yml` for appropriate storage allocation
+3. **Data Pipeline**: Update `data_pod.yml` with project-specific data sources and preprocessing
+4. **Training Configuration**: Adapt `train_pod.yml` and `train_job.yml` with model-specific parameters and resource requirements
 
-3. **Edit `data_pod.yml`:**
-   - Update git repo URL for your project
-   - Modify data download commands
-   - Add custom preprocessing steps
+**GPU Resource Allocation:**
+- **Standard GPUs** (GTX, T4, V100): Available in standard queues
+- **A100 GPUs**: Require special queue access and approval
 
-4. **Edit `train_pod.yml` and `train_job.yml`:**
-   - Change pod/job names
-   - Update git repo URL  
-   - Adjust resource requests (remember: limits = 1.2x requests)
-   - Modify training commands for your model
-
-**GPU Types:**
-- **GTX, T4, V100**: Available in regular pods and jobs
-- **A100**: Requires special job queue and access approval
-
-**Recommended workflow:** Test your code with train_pod.yml first, then use train_job.yml for longer runs, and only request A100 access after confirming your job works properly.
+**Recommended Development Process:** Validate functionality using `train_pod.yml`, deploy production runs with `train_job.yml`, and request A100 access only after the job runs correctly.
 
 ## Troubleshooting
 
-**Pod won't start:**
+**Pod Scheduling Issues:**
 ```bash
 kubectl describe pod <pod-name>
-kubectl get events
 ```
 
-**Authentication issues:**
-- Redownload config from https://portal.nrp-nautilus.io/
-- Replace `~/.kube/config`
+**Authentication Problems:**
+- Re-download configuration from https://portal.nrp-nautilus.io/
+- Replace existing `~/.kube/config` file
 
 ## Additional Resources
 
-- [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/)
-- [Nautilus Documentation](https://docs.nationalresearchplatform.org/)
+- [Nautilus Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/)
+- [Complete Nautilus Documentation](https://docs.nationalresearchplatform.org/)
 - [Matrix Chat Support](https://element.nrp-nautilus.io/#/room/#general:matrix.nrp-nautilus.io)
