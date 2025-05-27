@@ -4,7 +4,8 @@ metadata:
   name: cyclegan-train-pod
 spec:
   nodeSelector:
-    topology.kubernetes.io/zone: sdsu-rci
+    topology.kubernetes.io/region: us-west
+    nautilus.io/linstor: "true"
   containers:
     - name: cyclegan-trainer
       image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
@@ -16,30 +17,31 @@ spec:
         - "-c"
       args:
         - |
-          # Install decompression tools
-          apt-get update && apt-get install -y zstd pv
-          
+          # Install decompression tools (matching data pod)
+          sudo apt-get update && sudo apt-get install -y pigz pv
+         
           # Clone repository
           git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
           cd ${REPO_PATH}
-          
+         
           # Install requirements
           pip install -r requirements.txt
-          
-          # Extract compressed data
-          LATEST_DATASET=$(ls -t /data/cyclegan_dataset_*.tar.zst 2>/dev/null | head -1)
+         
+          # Extract compressed data (matching data pod format)
+          LATEST_DATASET=$(ls -t /data/processed_data_*.tar.gz 2>/dev/null | head -1)
           if [ -n "$LATEST_DATASET" ]; then
-            pv "$LATEST_DATASET" | zstd -d | tar -xf - -C ${REPO_PATH}/
+            echo "Found dataset: $LATEST_DATASET"
+            pv "$LATEST_DATASET" | pigz -d | tar -xf - -C ${REPO_PATH}/datasets/
             echo "Dataset extracted to ${REPO_PATH}/datasets/"
           elif [ -d "/data/datasets" ]; then
             echo "Using legacy datasets in /data/datasets"
           else
             echo "No datasets found - run data_pod.yml first"
           fi
-          
+         
           echo "Training environment ready"
           python train.py --dataroot ${REPO_PATH}/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5
-          
+         
           sleep infinity
       volumeMounts:
         - name: git-repo

@@ -100,6 +100,7 @@ k delete pod cyclegan-data-pod
 ### Step 3a: Interactive Training
 ```bash
 kubectl apply -f train_pod.yml
+watch kubectl get pods
 kubectl exec -it cyclegan-train-pod -- bash
 
 # Inside the training pod - GPU available!
