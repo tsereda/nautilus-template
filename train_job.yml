@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       nodeSelector:
-        topology.kubernetes.io/zone: sdsu-rci
         topology.kubernetes.io/region: us-west
+        nautilus.io/linstor: "true"
       containers:
         - name: cyclegan-trainer
           image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
@@ -24,7 +24,7 @@ spec:
               echo "Starting automated training job..."
               
               # Install decompression tools
-              apt-get update && apt-get install -y zstd pv
+              apt-get update && apt-get install -y pigz pv
               
               # Clone repository
               git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
@@ -34,14 +34,16 @@ spec:
               pip install -r requirements.txt
               
               # Find and decompress the latest dataset
-              LATEST_DATASET=$(ls -t /data/cyclegan_dataset_*.tar.zst 2>/dev/null | head -1)
+              LATEST_DATASET=$(ls -t /data/processed_data_*.tar.gz 2>/dev/null | head -1)
               if [ -z "$LATEST_DATASET" ]; then
                 echo "No compressed datasets found - run data_pod.yml first"
                 exit 1
               fi
               
-              # Fast decompression to repo folder
-              pv "$LATEST_DATASET" | zstd -d | tar -xf - -C ${REPO_PATH}/
+              # Extract compressed data
+              echo "Found dataset: $LATEST_DATASET"
+              pv "$LATEST_DATASET" | pigz -d | tar -xf - -C ${REPO_PATH}/datasets/
+              echo "Dataset extracted to ${REPO_PATH}/datasets/"
               
               # Create output directories on PVC for results
               mkdir -p /data/results /data/checkpoints
