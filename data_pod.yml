@@ -24,7 +24,7 @@ spec:
 
           # For downloading from Google Drive, use gdown; for downloading from Kaggle, use curl
 
-          # Note: This dataset does not require preprocessing, so we could just download directly to the pvc. Below the data is unzipped an immedietly recompressed for demonstration purposes
+          # Note: This dataset does not require preprocessing, so we could just download directly to the pvc. Below the data is unzipped an immediately recompressed for demonstration purposes
 
           # Extract (and run preprocessing script if you have one)
           sudo unzip /tmp/horse2zebra.zip -d processed_data/

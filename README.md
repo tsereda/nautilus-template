@@ -79,7 +79,7 @@ kubectl logs -f cyclegan-data-pod  # Monitor download progress
 
 # For manual downloads or other data:
 kubectl exec -it cyclegan-data-pod -- bash
-# Inside the pod, use gdown, wget, curl, or other download utility
+
 # Clean up when done
 kubectl delete pod cyclegan-data-pod
 ```
@@ -88,21 +88,27 @@ kubectl delete pod cyclegan-data-pod
 ```bash
 kubectl apply -f train_pod.yml
 watch kubectl get pods
-kubectl exec -it cyclegan-train-pod -- bash
+kubectl logs -f cyclegan-data-pod
 
-# Inside the training pod - GPU available!
-cd /app/pytorch-CycleGAN-and-pix2pix
-python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5
+# Check that the GPU is being used
+kubectl exec -it cyclegan-train-pod -- nvidia-smi
+
+# If debugging needed
+kubectl exec -it cyclegan-train-pod -- bash
 
 # Clean up when done
 kubectl delete pod cyclegan-train-pod
+
+# Once your pod runs without manual intervention using kubectl exec, it is ready to become a pod. Manually copy the "args" section of the .yml and any other changes you made or ask a language model to do it for you
 ```
 
 ### Step 3b: Automated Training
 ```bash
 kubectl apply -f train_job.yml
 kubectl logs -f job/cyclegan-train-job  # Monitor progress
+kubectl exec -it cyclegan-train-pod -- nvidia-smi
 # Job exits automatically when complete
+kubectl delete pod cyclegan-train-pod
 ```
 
 **data_pod.yml** - Data preparation (CPU only)
@@ -138,44 +144,11 @@ kubectl logs -f job/cyclegan-train-job  # Monitor progress
    - Adjust resource requests (remember: limits = 1.2x requests)
    - Modify training commands for your model
 
-## Resource Guidelines
-
-**Small jobs:**
-```yaml
-requests: {memory: 8Gi, cpu: "4", nvidia.com/gpu: "1"}
-limits: {memory: 10Gi, cpu: "5", nvidia.com/gpu: "1"}  # 1.2x requests
-```
-
-**Medium jobs:**
-```yaml
-requests: {memory: 20Gi, cpu: "10", nvidia.com/gpu: "1"}
-limits: {memory: 24Gi, cpu: "12", nvidia.com/gpu: "1"}
-```
-
 **GPU Types:**
-- **GTX, T4, V100**: Available in regular pods and jobs (6 hour limit for pods)
+- **GTX, T4, V100**: Available in regular pods and jobs
 - **A100**: Requires special job queue and access approval
 
 **Recommended workflow:** Test your code with train_pod.yml first, then use train_job.yml for longer runs, and only request A100 access after confirming your job works properly.
-
-## Common Commands
-
-```bash
-# Monitor
-kubectl get pods
-kubectl logs <pod-name> -f
-kubectl describe pod <pod-name>
-
-# Interact
-kubectl exec -it <pod-name> -- bash
-
-# File transfer
-kubectl cp <pod-name>:/path/to/file ./local-file
-kubectl cp ./local-file <pod-name>:/path/to/file
-
-# Clean up
-kubectl delete pod <pod-name>
-```
 
 ## Troubleshooting
 
