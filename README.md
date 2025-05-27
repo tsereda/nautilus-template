@@ -62,8 +62,6 @@ Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/r
    # You should see your namespace
    ```
 
-5. **Set up aliases** (optional but recommended): See [aliases.md](aliases.md)
-
 ## Usage Workflow
 
 ### Step 1: Create Storage
@@ -71,9 +69,6 @@ Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/r
 kubectl apply -f pvc.yml
 kubectl get pvc #Verify the status of your pvc is 'Bound'
 
-#With Aliases
-ka pvc.yml
-kgp
 ```
 
 ### Step 2: Download Data
@@ -88,13 +83,6 @@ kubectl exec -it cyclegan-data-pod -- bash
 # Inside the pod, use gdown, wget, curl, or other download utility
 # Clean up when done
 kubectl delete pod cyclegan-data-pod
-
-# OR With Aliases
-ka data_pod.yml
-wkgp
-kl cyclegan-data-pod 
-ke cyclegan-data-pod -- bash
-k delete pod cyclegan-data-pod
 ```
 
 ### Step 3a: Interactive Training
@@ -204,7 +192,6 @@ kubectl get events
 
 ## Additional Resources
 
-- [Kubectl Aliases](aliases.md) - Speed up your workflow
 - [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/)
 - [Nautilus Documentation](https://docs.nationalresearchplatform.org/)
 - [Matrix Chat Support](https://element.nrp-nautilus.io/#/room/#general:matrix.nrp-nautilus.io)
