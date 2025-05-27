@@ -11,9 +11,9 @@ A template repository for running machine learning projects on the Nautilus clus
 **Nautilus is a shared environment with strict resource policies.**
 
 - Request only the resources required for your workload
-- Release unused resources promptly
-- Ensure all jobs terminate automatically upon completion
-- **Delete unused pods immediately** to prevent namespace suspension
+- Delete unused pvcs,pods,jobs
+- Ensure all jobs terminate automatically
+- **Delete unused pods immediately**
 
 Review the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/) before beginning.
 
@@ -38,7 +38,7 @@ Review the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs
    - Message: *"Hello, I am a professor at the University of South Dakota requesting namespace administrator privileges."*
 
 4. **Namespace Configuration**: PI creates namespace via Portal → 'Namespace Manager'
-   - Namespace must be prefixed with "gp-engine" for grant tracking compliance
+   - Namespace should be prefixed with "gp-engine" for grant tracking compliance
    - PI adds users to the namespace
 
 5. **Access Verification**: Confirm access via Portal → "Namespace Manager"
@@ -46,7 +46,7 @@ Review the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs
 ### 2. Kubernetes Configuration
 
 1. **Install kubectl**: Follow instructions at https://kubernetes.io/releases/download/
-2. **Download Configuration**: Portal → 'Get Config'
+2. **Download Configuration**: [Portal](https://portal.nrp.ai/authConfig) → 'Get Config'
 3. **Install Configuration**: Place downloaded file at `~/.kube/config`
 4. **Verify Installation**: 
    ```bash
@@ -58,20 +58,22 @@ Review the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs
 ### Storage Provisioning
 ```bash
 kubectl apply -f pvc.yml
-kubectl get pvc  # Verify status shows 'Bound'
+kubectl get pvc  # Verify cyclegan-data-pvc status shows 'Bound'
 ```
 
 ### Data Preparation
 ```bash
 kubectl apply -f data_pod.yml
-kubectl get pods -w  # Monitor until status shows 'Running'
+watch kubectl get pods  # Monitor until status shows 'Running'
 kubectl logs -f cyclegan-data-pod  # Track download progress
 
-# For custom data operations:
+# To shell into pod:
 kubectl exec -it cyclegan-data-pod -- bash
 
 # Cleanup:
 kubectl delete pod cyclegan-data-pod
+
+# Wait until the pod is fully terminated, do not use -force or it may corrupt the pvc
 ```
 
 ### Training Execution
@@ -79,7 +81,8 @@ kubectl delete pod cyclegan-data-pod
 **Interactive Development:**
 ```bash
 kubectl apply -f train_pod.yml
-kubectl get pods -w
+watch kubectl get pods
+kubectl logs -f cyclegan-train-pod
 kubectl exec -it cyclegan-train-pod -- nvidia-smi  # Verify GPU allocation
 
 # For debugging:

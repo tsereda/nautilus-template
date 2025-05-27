@@ -33,8 +33,6 @@ spec:
             echo "Found dataset: $LATEST_DATASET"
             pv "$LATEST_DATASET" | pigz -d | tar -xf - -C ${REPO_PATH}/datasets/
             echo "Dataset extracted to ${REPO_PATH}/datasets/"
-          elif [ -d "/data/datasets" ]; then
-            echo "Using legacy datasets in /data/datasets"
           else
             echo "No datasets found - run data_pod.yml first"
           fi
