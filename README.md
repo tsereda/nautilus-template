@@ -2,7 +2,7 @@
 
 A template repository for running machine learning projects on the Nautilus cluster using Kubernetes. This example uses [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) but can be adapted for any ML project.
 
-## ⚠️ Important: Read First
+## Important: Read First
 
 **Nautilus is a shared environment with strict rules and bannable offenses.**
 

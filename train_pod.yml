@@ -17,43 +17,31 @@ spec:
         - "-c"
       args:
         - |
-          echo "=== Training Pod Started ==="
+          echo "Training pod started"
           
-          # Clone the CycleGAN repository
+          # Clone repository
           git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
           cd ${REPO_PATH}
           
-          # Install full requirements for training
+          # Install requirements
           pip install -r requirements.txt
           
-          # Check if data exists
+          # Check for data
           if [ -d "/data/datasets" ]; then
-            echo "✅ Found datasets in /data/datasets"
+            echo "Found datasets in /data/datasets"
             ls -la /data/datasets/
           else
-            echo "⚠️  No datasets found in /data/datasets"
-            echo "   First run data_pod.yml to download datasets"
+            echo "No datasets found - run data_pod.yml first"
           fi
           
           echo ""
-          echo "=== Training Environment Ready ==="
-          echo "Repository: ${REPO_PATH}"
-          echo "Datasets: /data/datasets"
-          echo "Results: /data/results (create this directory)"
-          echo "GPU: Available for training"
-          echo ""
+          echo "Training environment ready"
           echo "Connect with: kubectl exec -it cyclegan-train-pod -- bash"
           echo ""
-          echo "Quick start training commands:"
-          echo "  cd /app/pytorch-CycleGAN-and-pix2pix"
-          echo "  # Quick test (5 epochs)"
-          echo "  python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 2 --n_epochs_decay 3"
-          echo "  # Full training"  
-          echo "  python train.py --dataroot /data/datasets/horse2zebra --name horse2zebra_full --model cycle_gan"
+          echo "Example training command:"
+          echo "  python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5"
           echo ""
-          echo "=== Ready for Interactive Training ==="
           
-          # Keep container running for interactive use
           sleep infinity
       volumeMounts:
         - name: git-repo
@@ -63,7 +51,6 @@ spec:
         - name: dshm
           mountPath: /dev/shm
       resources:
-        # GPU resources for training
         limits:
           memory: 24Gi
           cpu: "12"

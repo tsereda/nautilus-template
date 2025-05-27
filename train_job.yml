@@ -14,53 +14,41 @@ spec:
           env:
             - name: REPO_PATH
               value: /app/pytorch-CycleGAN-and-pix2pix
-            - name: DATASET_NAME
-              value: "horse2zebra"  # Change this for different datasets
-            - name: MODEL_NAME
-              value: "horse2zebra_production"
 
           command:
             - "bash"
             - "-c"
           args:
             - |
-              set -e  # Exit on any error
+              set -e
               
-              echo "=== Starting Automated CycleGAN Training Job ==="
-              echo "Dataset: ${DATASET_NAME}"
-              echo "Model Name: ${MODEL_NAME}"
-              echo "Epochs: ${EPOCHS} + ${DECAY_EPOCHS} decay"
+              echo "Starting automated training job..."
               
               # Clone repository
-              echo "Cloning repository..."
               git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
               cd ${REPO_PATH}
               
               # Install requirements
-              echo "Installing requirements..."
               pip install -r requirements.txt
               
-              # Check for pre-downloaded data
-              if [ ! -d "/data/datasets/${DATASET_NAME}" ]; then
-                echo "Dataset not found at /data/datasets/${DATASET_NAME}"
-                echo "Please run data_pod.yml first to download datasets"
+              # Check for data
+              if [ ! -d "/data/datasets" ]; then
+                echo "No datasets found at /data/datasets - run data_pod.yml first"
                 exit 1
               fi
               
-              echo "Found dataset at /data/datasets/${DATASET_NAME}"
-              
-              # Create results directory
+              # Create output directories
               mkdir -p /data/results
               mkdir -p /data/checkpoints
               
               # Train the model
               echo "Starting training..."
               python train.py \
-                --dataroot /data/datasets/${DATASET_NAME} \
-                --name ${MODEL_NAME} \
+                --dataroot /data/datasets/horse2zebra \
+                --name production_run \
                 --model cycle_gan \
-                --n_epochs ${EPOCHS} \
-                --n_epochs_decay ${DECAY_EPOCHS} \
+                --n_epochs 100 \
+                --n_epochs_decay 100 \
                 --save_epoch_freq 10 \
                 --display_freq 400 \
                 --print_freq 100 \
@@ -70,13 +58,14 @@ spec:
               # Test the model
               echo "Running inference..."
               python test.py \
-                --dataroot /data/datasets/${DATASET_NAME} \
-                --name ${MODEL_NAME} \
+                --dataroot /data/datasets/horse2zebra \
+                --name production_run \
                 --model cycle_gan \
                 --checkpoints_dir /data/checkpoints \
                 --results_dir /data/results
               
-              exit 0
+              echo "Training complete"
+              
           volumeMounts:
             - name: git-repo
               mountPath: /app
@@ -85,7 +74,6 @@ spec:
             - name: dshm
               mountPath: /dev/shm
           resources:
-            # GPU resources for training
             limits:
               memory: 24Gi
               cpu: "12"
@@ -105,4 +93,4 @@ spec:
             medium: Memory
             sizeLimit: 8Gi
       restartPolicy: Never
-  backoffLimit: 2  # Retry up to 2 times if job fails
+  backoffLimit: 1

@@ -17,30 +17,19 @@ spec:
         - "-c"
       args:
         - |
-          echo "=== Data Download Pod Started ==="
+          echo "Data download pod started"
           
           # Clone repository for dataset scripts
           git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
           cd ${REPO_PATH}
           
-          # Install minimal requirements for data downloading
+          # Install minimal requirements
           pip install requests tqdm
           
-          echo "Available datasets:"
-          echo "- horse2zebra (recommended for testing)"
-          echo "- maps, facades, cityscapes, apple2orange, summer2winter_yosemite"
-          echo ""
-          echo "To download a dataset:"
-          echo "  kubectl exec -it cyclegan-data-pod -- bash"
-          echo "  cd /app/pytorch-CycleGAN-and-pix2pix"
-          echo "  bash ./datasets/download_cyclegan_dataset.sh horse2zebra"
-          echo "  mkdir -p /data/datasets"
-          echo "  cp -r ./datasets/* /data/datasets/"
-          echo ""
-          echo "Data will be saved to /data/datasets for use by training pods"
-          echo "=== Ready for interactive data preparation ==="
+          echo "Connect with: kubectl exec -it cyclegan-data-pod -- bash"
+          echo "Then run: bash ./datasets/download_cyclegan_dataset.sh horse2zebra"
+          echo "Copy to storage: mkdir -p /data/datasets && cp -r ./datasets/* /data/datasets/"
           
-          # Keep running for interactive use
           sleep infinity
       volumeMounts:
         - name: git-repo
@@ -48,7 +37,6 @@ spec:
         - name: data-volume
           mountPath: /data
       resources:
-        # No GPU needed for data downloading - saves resources!
         limits:
           memory: 12Gi
           cpu: "6"
