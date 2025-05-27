@@ -17,24 +17,17 @@ spec:
         - "-c"
       args:
         - |
-          # Install compression tools
-          apt-get update && apt-get install -y zstd pv
-          
-          # Clone repository for data download script
-          git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
-          cd ${REPO_PATH}
-          
           pip install requests tqdm gdown 
           
-          # Download horse2zebra dataset
-          bash ./datasets/download_cyclegan_dataset.sh horse2zebra
+          # Download horse2zebra dataset to pvc (our pvc is mounted to /data/ below)
+          wget -N http://efrosgans.eecs.berkeley.edu/cyclegan/datasets/horse2zebra.zip -O /data/horse2zebra.zip
           
-          # Compress dataset to PVC
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          tar -cf - datasets/ | pv | zstd -19 -T$(nproc) > /data/cyclegan_dataset_${TIMESTAMP}.tar.zst
-          
-          # Verify and cleanup
-          zstd -t /data/cyclegan_dataset_${TIMESTAMP}.tar.zst
+          # If your data requires preprocessing: uncompress it, clone and run your preprocessing code, then compress and copy to pvc
+          # Example:
+          # Download compression tools
+          # apt-get update && sudo apt-get install -y p7zip-full pigz pv
+          # Compress processed data and save to PVC with timestamp
+          # sudo tar -cf - -C processed_data . | pv | sudo pigz -p $(nproc) | sudo tee /data/processed_data_$(date +%m%d_%H%M).tar.gz > /dev/null
           
           ls -lh /data/
           

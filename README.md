@@ -69,12 +69,18 @@ Read the [Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/r
 ### Step 1: Create Storage
 ```bash
 kubectl apply -f pvc.yml
+kubectl get pvc #Verify the status of your pvc is 'Bound'
+
+#With Aliases
+ka pvc.yml
+kgp
 ```
 
-### Step 2: Download Data (No GPU Needed)
+### Step 2: Download Data
 ```bash
 kubectl apply -f data_pod.yml
 # Data pod automatically downloads horse2zebra dataset
+watch kubectl get pods # Wait for pod status 'Running' (Ctrl+C to cancel)
 kubectl logs -f cyclegan-data-pod  # Monitor download progress
 
 # For manual downloads or other data:
@@ -82,9 +88,16 @@ kubectl exec -it cyclegan-data-pod -- bash
 # Inside the pod, use gdown, wget, curl, or other download utility
 # Clean up when done
 kubectl delete pod cyclegan-data-pod
+
+#With Aliases
+ka data_pod.yml
+wkgp
+kl cyclegan-data-pod 
+ke cyclegan-data-pod -- bash
+k delete pod cyclegan-data-pod
 ```
 
-### Step 3a: Interactive Training (Development)
+### Step 3a: Interactive Training
 ```bash
 kubectl apply -f train_pod.yml
 kubectl exec -it cyclegan-train-pod -- bash
@@ -97,7 +110,7 @@ python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cy
 kubectl delete pod cyclegan-train-pod
 ```
 
-### Step 3b: Automated Training (Production)
+### Step 3b: Automated Training
 ```bash
 kubectl apply -f train_job.yml
 kubectl logs -f job/cyclegan-train-job  # Monitor progress
