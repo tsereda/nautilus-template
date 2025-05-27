@@ -27,7 +27,7 @@ spec:
           pip install requests tqdm
           
           echo "Connect with: kubectl exec -it cyclegan-data-pod -- bash"
-          echo "Then run: bash ./datasets/download_cyclegan_dataset.sh horse2zebra"
+          echo "Then run: bash ./datasets/download_cyclegan_dataset.sh horse2zebra OR download your data from Kaggle using curl, Google drive using gdown, or another source/method"
           echo "Copy to storage: mkdir -p /data/datasets && cp -r ./datasets/* /data/datasets/"
           
           sleep infinity
