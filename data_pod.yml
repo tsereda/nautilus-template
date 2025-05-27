@@ -19,10 +19,12 @@ spec:
         - |
           pip install requests tqdm gdown
 
-          # Download horse2zebra dataset
+          # Download horse2zebra dataset 
           sudo wget -N http://efrosgans.eecs.berkeley.edu/cyclegan/datasets/horse2zebra.zip -O /tmp/horse2zebra.zip
 
-          # Note: This dataset does not require preprocessing, so we could just download directly to the pvc. Below the data is unzipped an immedietly recompressed for domonstration purposes
+          # For downloading from Google Drive, use gdown; for downloading from Kaggle, use curl
+
+          # Note: This dataset does not require preprocessing, so we could just download directly to the pvc. Below the data is unzipped an immedietly recompressed for demonstration purposes
 
           # Extract (and run preprocessing script if you have one)
           sudo unzip /tmp/horse2zebra.zip -d processed_data/
@@ -30,7 +32,7 @@ spec:
           # Download compression tools
           sudo apt-get update && sudo apt-get install -y p7zip-full pigz pv
 
-          # Compress processed data with multithreading and 'kubectl logs'-visible output and save to PVC with timestamp
+          # Compress processed data with multithreading and save to PVC with timestamp
           sudo tar -cf - -C processed_data . | pv | sudo pigz -p $(nproc) | sudo tee /data/processed_data_$(date +%m%d_%H%M).tar.gz > /dev/null
 
           echo "Download, extraction, and recompression complete! PVC content:"
