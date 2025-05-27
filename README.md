@@ -83,9 +83,10 @@ kubectl delete pod cyclegan-data-pod
 kubectl apply -f train_pod.yml
 watch kubectl get pods
 kubectl logs -f cyclegan-train-pod
+# The first epoch will take several minutes to complete
 kubectl exec -it cyclegan-train-pod -- nvidia-smi  # Verify GPU allocation
 
-# For debugging:
+# Access pod directly:
 kubectl exec -it cyclegan-train-pod -- bash
 
 # Cleanup:
@@ -95,11 +96,13 @@ kubectl delete pod cyclegan-train-pod
 **Automated Training:**
 ```bash
 kubectl apply -f train_job.yml
-kubectl logs -f job/cyclegan-train-job
+kubectl logs -f jobs/cyclegan-train-job
+kubectl exec -it jobs/cyclegan-train-job -- nvidia-smi
 # Job terminates automatically upon completion
+kubectl delete job cyclegan-train-job
 ```
 
-## Pod Specifications
+## Pods
 
 **Data Pod (`data_pod.yml`)** - CPU-only data preparation
 - Handles data download and preprocessing
@@ -110,7 +113,7 @@ kubectl logs -f job/cyclegan-train-job
 **Training Job (`train_job.yml`)** - Automated GPU-enabled production
 - Fully autonomous training execution with automatic termination
 
-## Customization Guidelines
+## Customization
 
 1. **Repository Adaptation**: Fork this repository for your project or copy .ymls to your repository
 2. **Storage Configuration**: Modify `pvc.yml` for appropriate storage allocation
@@ -121,7 +124,7 @@ kubectl logs -f job/cyclegan-train-job
 - **Standard GPUs** (GTX, T4, V100): Available in standard queues
 - **A100 GPUs**: Require special queue access and approval
 
-**Recommended Development Process:** Validate functionality using `train_pod.yml`, deploy production runs with `train_job.yml`, and request A100 access only after the job runs correctly.
+**Recommended Workflow:** Validate functionality using `train_pod.yml`, deploy production runs with `train_job.yml`, and request A100 access only after the job runs correctly.
 
 ## Troubleshooting
 

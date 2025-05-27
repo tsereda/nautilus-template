@@ -19,58 +19,29 @@ spec:
             - "-c"
           args:
             - |
-              set -e
+                # Install decompression tools (matching data pod)
+                sudo apt-get update && sudo apt-get install -y pigz pv
               
-              echo "Starting automated training job..."
+                # Clone repository
+                git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
+                cd ${REPO_PATH}
               
-              # Install decompression tools
-              apt-get update && apt-get install -y pigz pv
+                # Install requirements
+                pip install -r requirements.txt
               
-              # Clone repository
-              git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
-              cd ${REPO_PATH}
+                # Extract compressed data (matching data pod format)
+                LATEST_DATASET=$(ls -t /data/processed_data_*.tar.gz 2>/dev/null | head -1)
+                if [ -n "$LATEST_DATASET" ]; then
+                  echo "Found dataset: $LATEST_DATASET"
+                  pv "$LATEST_DATASET" | pigz -d | tar -xf - -C ${REPO_PATH}/datasets/
+                  echo "Dataset extracted to ${REPO_PATH}/datasets/"
+                else
+                  echo "No datasets found - run data_pod.yml first"
+                fi
+                
+                python train.py --dataroot ${REPO_PATH}/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5
               
-              # Install requirements
-              pip install -r requirements.txt
-              
-              # Find and decompress the latest dataset
-              LATEST_DATASET=$(ls -t /data/processed_data_*.tar.gz 2>/dev/null | head -1)
-              if [ -z "$LATEST_DATASET" ]; then
-                echo "No compressed datasets found - run data_pod.yml first"
-                exit 1
-              fi
-              
-              # Extract compressed data
-              echo "Found dataset: $LATEST_DATASET"
-              pv "$LATEST_DATASET" | pigz -d | tar -xf - -C ${REPO_PATH}/datasets/
-              echo "Dataset extracted to ${REPO_PATH}/datasets/"
-              
-              # Create output directories on PVC for results
-              mkdir -p /data/results /data/checkpoints
-              
-              # Train the model
-              python train.py \
-                --dataroot ${REPO_PATH}/datasets/horse2zebra \
-                --name production_run \
-                --model cycle_gan \
-                --n_epochs 100 \
-                --n_epochs_decay 100 \
-                --save_epoch_freq 10 \
-                --display_freq 400 \
-                --print_freq 100 \
-                --checkpoints_dir /data/checkpoints \
-                --gpu_ids 0
-              
-              # Test the model
-              python test.py \
-                --dataroot ${REPO_PATH}/datasets/horse2zebra \
-                --name production_run \
-                --model cycle_gan \
-                --checkpoints_dir /data/checkpoints \
-                --results_dir /data/results
-              
-              echo "Training complete"
-              
+                echo "Training complete!"
           volumeMounts:
             - name: git-repo
               mountPath: /app
