@@ -14,7 +14,6 @@ spec:
           env:
             - name: REPO_PATH
               value: /app/pytorch-CycleGAN-and-pix2pix
-
           command:
             - "bash"
             - "-c"
@@ -24,6 +23,9 @@ spec:
               
               echo "Starting automated training job..."
               
+              # Install decompression tools
+              apt-get update && apt-get install -y zstd pv
+              
               # Clone repository
               git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
               cd ${REPO_PATH}
@@ -31,20 +33,22 @@ spec:
               # Install requirements
               pip install -r requirements.txt
               
-              # Check for data
-              if [ ! -d "/data/datasets" ]; then
-                echo "No datasets found at /data/datasets - run data_pod.yml first"
+              # Find and decompress the latest dataset
+              LATEST_DATASET=$(ls -t /data/cyclegan_dataset_*.tar.zst 2>/dev/null | head -1)
+              if [ -z "$LATEST_DATASET" ]; then
+                echo "No compressed datasets found - run data_pod.yml first"
                 exit 1
               fi
               
-              # Create output directories
-              mkdir -p /data/results
-              mkdir -p /data/checkpoints
+              # Fast decompression to repo folder
+              pv "$LATEST_DATASET" | zstd -d | tar -xf - -C ${REPO_PATH}/
+              
+              # Create output directories on PVC for results
+              mkdir -p /data/results /data/checkpoints
               
               # Train the model
-              echo "Starting training..."
               python train.py \
-                --dataroot /data/datasets/horse2zebra \
+                --dataroot ${REPO_PATH}/datasets/horse2zebra \
                 --name production_run \
                 --model cycle_gan \
                 --n_epochs 100 \
@@ -56,9 +60,8 @@ spec:
                 --gpu_ids 0
               
               # Test the model
-              echo "Running inference..."
               python test.py \
-                --dataroot /data/datasets/horse2zebra \
+                --dataroot ${REPO_PATH}/datasets/horse2zebra \
                 --name production_run \
                 --model cycle_gan \
                 --checkpoints_dir /data/checkpoints \

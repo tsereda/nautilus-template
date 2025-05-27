@@ -17,7 +17,8 @@ spec:
         - "-c"
       args:
         - |
-          echo "Training pod started"
+          # Install decompression tools
+          apt-get update && apt-get install -y zstd pv
           
           # Clone repository
           git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
@@ -26,21 +27,19 @@ spec:
           # Install requirements
           pip install -r requirements.txt
           
-          # Check for data
-          if [ -d "/data/datasets" ]; then
-            echo "Found datasets in /data/datasets"
-            ls -la /data/datasets/
+          # Extract compressed data
+          LATEST_DATASET=$(ls -t /data/cyclegan_dataset_*.tar.zst 2>/dev/null | head -1)
+          if [ -n "$LATEST_DATASET" ]; then
+            pv "$LATEST_DATASET" | zstd -d | tar -xf - -C ${REPO_PATH}/
+            echo "Dataset extracted to ${REPO_PATH}/datasets/"
+          elif [ -d "/data/datasets" ]; then
+            echo "Using legacy datasets in /data/datasets"
           else
             echo "No datasets found - run data_pod.yml first"
           fi
           
-          echo ""
           echo "Training environment ready"
-          echo "Connect with: kubectl exec -it cyclegan-train-pod -- bash"
-          echo ""
-          echo "Example training command:"
-          echo "  python train.py --dataroot /data/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5"
-          echo ""
+          python train.py --dataroot ${REPO_PATH}/datasets/horse2zebra --name test_run --model cycle_gan --n_epochs 5
           
           sleep infinity
       volumeMounts:

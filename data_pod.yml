@@ -17,18 +17,26 @@ spec:
         - "-c"
       args:
         - |
-          echo "Data download pod started"
+          # Install compression tools
+          apt-get update && apt-get install -y zstd pv
           
-          # Clone repository for dataset scripts
+          # Clone repository for data download script
           git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git ${REPO_PATH}
           cd ${REPO_PATH}
           
-          # Install minimal requirements
-          pip install requests tqdm
+          pip install requests tqdm gdown 
           
-          echo "Connect with: kubectl exec -it cyclegan-data-pod -- bash"
-          echo "Then run: bash ./datasets/download_cyclegan_dataset.sh horse2zebra OR download your data from Kaggle using curl, Google drive using gdown, or another source/method"
-          echo "Copy to storage: mkdir -p /data/datasets && cp -r ./datasets/* /data/datasets/"
+          # Download horse2zebra dataset
+          bash ./datasets/download_cyclegan_dataset.sh horse2zebra
+          
+          # Compress dataset to PVC
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          tar -cf - datasets/ | pv | zstd -19 -T$(nproc) > /data/cyclegan_dataset_${TIMESTAMP}.tar.zst
+          
+          # Verify and cleanup
+          zstd -t /data/cyclegan_dataset_${TIMESTAMP}.tar.zst
+          
+          ls -lh /data/
           
           sleep infinity
       volumeMounts:
