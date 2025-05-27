@@ -144,3 +144,5 @@ kubectl describe pod <pod-name>
 - [Nautilus Cluster Policies](https://docs.nationalresearchplatform.org/userdocs/running/policies/)
 - [Complete Nautilus Documentation](https://docs.nationalresearchplatform.org/)
 - [Matrix Chat Support](https://element.nrp-nautilus.io/#/room/#general:matrix.nrp-nautilus.io)
+
+**How to Cite:** This work was supported in part by National Science Foundation (NSF) awards CNS-1730158, ACI-1540112, ACI-1541349, OAC-1826967, OAC-2112167, CNS-2100237, CNS-2120019.
