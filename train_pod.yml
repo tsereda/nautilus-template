@@ -47,6 +47,8 @@ spec:
         - name: data-volume
           mountPath: /data
         - name: dshm
+            # Shared memory volume for PyTorch DataLoader multiprocessing
+            # PyTorch workers need space to transfer loaded batches to main process
           mountPath: /dev/shm
       resources:
         limits:
