@@ -6,6 +6,16 @@ A template repository for running machine learning projects on the Nautilus clus
 
 **Nautilus** is part of the National Research Platform (NRP), a national resource sharing program that provides researchers access to distributed computing infrastructure across multiple universities. It uses **Kubernetes**, an orchestration system that manages containerized applications across clusters of machines, allowing you to run ML jobs on shared GPU resources.
 
+## Alternative: JupyterHub Platform
+
+**For users who want a simpler entry point:**
+
+- Web-based Jupyter notebooks - no Kubernetes knowledge needed
+- Access at [jupyterhub-west.nrp-nautilus.io](https://jupyterhub-west.nrp-nautilus.io)
+- Default: 5GB memory, upgradeable (ask in Matrix chat)
+- Good for experimentation and learning
+- No namespace required - just institutional login
+
 ## Prerequisites and Important Notes
 
 **Nautilus is a shared environment with strict resource policies.**

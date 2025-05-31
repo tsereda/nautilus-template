@@ -8,6 +8,6 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  # linstor-sdsu ensures storage is provisioned in San Diego State University zone
-  # This matches the nodeSelector in our pods for optimal performance
-  storageClassName: linstor-sdsu
+  storageClassName: rook-ceph-block
+    # rook-ceph-block : Largest storage pool, works everywhere
+    # linstor-sdsu : Fastest possible I/O performance, provisioned in San Diego State University zone
