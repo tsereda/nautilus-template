@@ -9,8 +9,6 @@ backgroundImage: url('https://marp.app/assets/hero-background.svg')
 # Nautilus ML Template
 ## Running Machine Learning Projects on Kubernetes
 
-**A Guide to Distributed GPU Computing**
-
 ---
 
 ## What is Nautilus?
