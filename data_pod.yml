@@ -4,7 +4,7 @@ metadata:
   name: cyclegan-data-pod
 spec:
   nodeSelector:
-    topology.kubernetes.io/zone: sdsu-rci
+    nautilus.io/linstor: "true"
     topology.kubernetes.io/region: us-west
   containers:
     - name: data-downloader
